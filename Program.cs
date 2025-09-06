@@ -8,7 +8,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 // Add MongoDB connection
-var connectionString = "mongodb+srv://inventoryuser:GWgK7qO2Ty7m1ySD@inventorycluster.XXXXX.mongodb.net/?retryWrites=true&w=majority";
+var connectionString = "mongodb+srv://inventoryuser:GWgK7qO2Ty7m1ySD@inventorycluster.vjbrkwd.mongodb.net/?retryWrites=true&w=majority";
 
 // Register InventoryService (without SignalR for now)
 builder.Services.AddSingleton<InventoryService>(provider =>
