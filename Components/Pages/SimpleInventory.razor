@@ -1,109 +1,262 @@
 @page "/simple-inventory"
 @rendermode InteractiveServer
+@inject InventoryService InventoryService
+@using InventoryMLApp.Models
+@using InventoryMLApp.Services
 
-<PageTitle>Simple Inventory</PageTitle>
-<h1>My First Inventory System</h1>
+<PageTitle>MongoDB Inventory System</PageTitle>
+
+<h1>MongoDB Inventory System</h1>
 
 <div class="row">
     <div class="col-md-6">
-        <!-- Add Item Form -->
         <div class="card">
             <div class="card-header">
                 <h4>Add New Product</h4>
             </div>
             <div class="card-body">
                 <div class="mb-3">
+                    <label class="form-label">Store ID:</label>
+                    <input class="form-control" @bind="newStoreId" placeholder="store1" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Product ID:</label>
+                    <input class="form-control" @bind="newProductId" placeholder="iphone15" />
+                </div>
+                <div class="mb-3">
                     <label class="form-label">Product Name:</label>
-                    <input class="form-control" @bind="newProductName" placeholder="Enter product name" />
+                    <input class="form-control" @bind="newProductName" placeholder="iPhone 15" />
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Current Stock:</label>
                     <input class="form-control" type="number" @bind="newStock" placeholder="0" />
                 </div>
-                <button class="btn btn-primary" @onclick="AddProduct">Add Product</button>
+                <div class="mb-3">
+                    <label class="form-label">Price:</label>
+                    <input class="form-control" type="number" step="0.01" @bind="newPrice" placeholder="999.99" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Category:</label>
+                    <input class="form-control" @bind="newCategory" placeholder="Electronics" />
+                </div>
+                <button class="btn btn-primary" @onclick="AddProduct" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    Add Product
+                </button>
             </div>
         </div>
     </div>
+
     <div class="col-md-6">
-        <!-- Inventory List -->
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h4>Current Inventory (@inventoryItems.Count items)</h4>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="LoadProducts">
+                    🔄 Refresh
+                </button>
             </div>
             <div class="card-body">
-                @if (inventoryItems.Count == 0)
+                @if (isLoading)
                 {
-                    <p class="text-muted">No products yet. Add some products to get started!</p>
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Loading from MongoDB...</p>
+                    </div>
+                }
+                else if (inventoryItems.Count == 0)
+                {
+                    <p class="text-muted">No products in database yet. Add products to get started!</p>
                 }
                 else
                 {
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Stock</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in inventoryItems){
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm">
+                            <thead>
                                 <tr>
-                                    <td>@item.ProductName</td>
-                                    <td><span class="badge bg-secondary">@item.CurrentStock</span></td>
-                                    <td><span class="badge @GetStatusColor(item.CurrentStock)">@GetStatus(item.CurrentStock)</span></td>
-                                    <td><button class="btn btn-sm btn-outline-primary" @onclick="() => AddStock(item)">+5 Stock</button></td>
+                                    <th>Store</th>
+                                    <th>Product</th>
+                                    <th>Stock</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>  
+                            </thead>
+                            <tbody>
+                                @foreach (var item in inventoryItems)
+                                {
+                                    <tr>
+                                        <td>@item.StoreId</td>
+                                        <td>
+                                            <strong>@item.ProductName</strong><br>
+                                            <small class="text-muted">@item.Category - $@item.PricePoint</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">@item.CurrentStock</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge @GetStatusColor(item.CurrentStock, item.MinimumStock)">
+                                                @GetStatus(item.CurrentStock, item.MinimumStock)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button class="btn btn-sm btn-outline-success" 
+                                                        @onclick="() => AddStock(item, 5)" 
+                                                        disabled="@isLoading">
+                                                    +5
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-warning" 
+                                                        @onclick="() => AddStock(item, -1)" 
+                                                        disabled="@isLoading">
+                                                    -1
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 }
             </div>
         </div>
     </div>
 </div>
 
-@code {
-    public class SimpleProduct {
-        public string ProductName { get; set; } = "";
-        public int CurrentStock { get; set; }
-        public int MinimumStock { get; set; } = 10;
-    }
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert alert-info mt-3">
+        @statusMessage
+    </div>
+}
 
-    private List<SimpleProduct> inventoryItems = new();
+@code {
+    private List<InventoryItem> inventoryItems = new();
+    private bool isLoading = false;
+    private string statusMessage = "";
+
+    // Form fields
+    private string newStoreId = "store1";
+    private string newProductId = "";
     private string newProductName = "";
     private int newStock = 0;
+    private decimal newPrice = 0;
+    private string newCategory = "";
 
-    protected override void OnInitialized(){
-        inventoryItems.Add(new SimpleProduct { ProductName = "Laptop", CurrentStock = 15 });
-        inventoryItems.Add(new SimpleProduct { ProductName = "Smartphone", CurrentStock = 8 });
-        inventoryItems.Add(new SimpleProduct { ProductName = "Headphones", CurrentStock = 20 });
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
     }
 
-    private void AddProduct() {
-        if(!string.IsNullOrWhiteSpace(newProductName) && newStock >= 0){
-            inventoryItems.Add(new SimpleProduct {
-                ProductName = newProductName,
-                CurrentStock = newStock,
-                MinimumStock = 10
-            });
-            newProductName = "";
-            newStock = 0;
+    private async Task LoadProducts()
+    {
+        isLoading = true;
+        statusMessage = "Loading products from MongoDB...";
+        StateHasChanged();
+
+        try
+        {
+            inventoryItems = await InventoryService.GetAllAsync();
+            statusMessage = $"Loaded {inventoryItems.Count} products from MongoDB.";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error loading products: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
     }
 
-    private void AddStock(SimpleProduct item){
-        item.CurrentStock += 5;
+    private async Task AddProduct()
+    {
+        if (string.IsNullOrWhiteSpace(newProductName) || string.IsNullOrWhiteSpace(newProductId))
+        {
+            statusMessage = "Please fill in Product Name and Product ID.";
+            return;
+        }
+
+        isLoading = true;
+        statusMessage = "Saving to MongoDB...";
+        StateHasChanged();
+
+        try
+        {
+            var item = new InventoryItem
+            {
+                StoreId = newStoreId,
+                ProductId = newProductId.ToLower().Replace(" ", "_"),
+                ProductName = newProductName,
+                CurrentStock = newStock,
+                PricePoint = newPrice,
+                Category = string.IsNullOrWhiteSpace(newCategory) ? "General" : newCategory,
+                MinimumStock = 10
+            };
+
+            await InventoryService.CreateAsync(item);
+            
+            // Clear form
+            newProductId = "";
+            newProductName = "";
+            newStock = 0;
+            newPrice = 0;
+            newCategory = "";
+
+            // Reload data
+            await LoadProducts();
+            statusMessage = "Product added successfully to MongoDB!";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error adding product: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
-    private string GetStatus(int currentStock){
-        if(currentStock < 10) return "Low Stock" ; 
-        if(currentStock > 30) return "High Stock";
+    private async Task AddStock(InventoryItem item, int change)
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var newStock = Math.Max(0, item.CurrentStock + change);
+            await InventoryService.UpdateStockAsync(item.Id, newStock);
+            await LoadProducts();
+            statusMessage = $"Updated {item.ProductName} stock to {newStock}.";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error updating stock: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetStatus(int currentStock, int minimumStock)
+    {
+        if (currentStock < minimumStock) return "Low Stock";
+        if (currentStock > minimumStock * 3) return "High Stock";
         return "Normal";
     }
-    private string GetStatusColor(int currentStock){
-        if(currentStock < 10) return "bg-danger" ; 
-        if(currentStock > 30) return "bg-success";
+
+    private string GetStatusColor(int currentStock, int minimumStock)
+    {
+        if (currentStock < minimumStock) return "bg-danger";
+        if (currentStock > minimumStock * 3) return "bg-success";
         return "bg-warning";
-    }     
+    }
 }
