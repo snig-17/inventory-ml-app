@@ -1,0 +1,109 @@
+@page "/simple-inventory"
+@rendermode InteractiveServer
+
+<PageTitle>Simple Inventory</PageTitle>
+<h1>My First Inventory System</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <!-- Add Item Form -->
+        <div class="card">
+            <div class="card-header">
+                <h4>Add New Product</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Product Name:</label>
+                    <input class="form-control" @bind="newProductName" placeholder="Enter product name" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Current Stock:</label>
+                    <input class="form-control" type="number" @bind="newStock" placeholder="0" />
+                </div>
+                <button class="btn btn-primary" @onclick="AddProduct">Add Product</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <!-- Inventory List -->
+        <div class="card">
+            <div class="card-header">
+                <h4>Current Inventory (@inventoryItems.Count items)</h4>
+            </div>
+            <div class="card-body">
+                @if (inventoryItems.Count == 0)
+                {
+                    <p class="text-muted">No products yet. Add some products to get started!</p>
+                }
+                else
+                {
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in inventoryItems){
+                                <tr>
+                                    <td>@item.ProductName</td>
+                                    <td><span class="badge bg-secondary">@item.CurrentStock</span></td>
+                                    <td><span class="badge @GetStatusColor(item.CurrentStock)">@GetStatus(item.CurrentStock)</span></td>
+                                    <td><button class="btn btn-sm btn-outline-primary" @onclick="() => AddStock(item)">+5 Stock</button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>  
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public class SimpleProduct {
+        public string ProductName { get; set; } = "";
+        public int CurrentStock { get; set; }
+        public int MinimumStock { get; set; } = 10;
+    }
+
+    private List<SimpleProduct> inventoryItems = new();
+    private string newProductName = "";
+    private int newStock = 0;
+
+    protected override void OnInitialized(){
+        inventoryItems.Add(new SimpleProduct { ProductName = "Laptop", CurrentStock = 15 });
+        inventoryItems.Add(new SimpleProduct { ProductName = "Smartphone", CurrentStock = 8 });
+        inventoryItems.Add(new SimpleProduct { ProductName = "Headphones", CurrentStock = 20 });
+    }
+
+    private void AddProduct() {
+        if(!string.IsNullOrWhiteSpace(newProductName) && newStock >= 0){
+            inventoryItems.Add(new SimpleProduct {
+                ProductName = newProductName,
+                CurrentStock = newStock,
+                MinimumStock = 10
+            });
+            newProductName = "";
+            newStock = 0;
+        }
+    }
+
+    private void AddStock(SimpleProduct item){
+        item.CurrentStock += 5;
+    }
+
+    private string GetStatus(int currentStock){
+        if(currentStock < 10) return "Low Stock" ; 
+        if(currentStock > 30) return "High Stock";
+        return "Normal";
+    }
+    private string GetStatusColor(int currentStock){
+        if(currentStock < 10) return "bg-danger" ; 
+        if(currentStock > 30) return "bg-success";
+        return "bg-warning";
+    }     
+}
