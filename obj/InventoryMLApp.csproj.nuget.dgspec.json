@@ -50,15 +50,15 @@
             },
             "Microsoft.ML": {
               "target": "Package",
-              "version": "[3.0.1, )"
+              "version": "[4.0.2, )"
             },
             "Microsoft.ML.AutoML": {
               "target": "Package",
-              "version": "[0.21.1, )"
+              "version": "[0.22.2, )"
             },
             "Microsoft.ML.TimeSeries": {
               "target": "Package",
-              "version": "[3.0.1, )"
+              "version": "[4.0.2, )"
             },
             "MongoDB.Driver": {
               "target": "Package",

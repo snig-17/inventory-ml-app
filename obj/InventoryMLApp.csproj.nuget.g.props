@@ -13,14 +13,15 @@
     <SourceRoot Include="/Users/snigdhatiwari/.nuget/packages/" />
   </ItemGroup>
   <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <Import Project="$(NuGetPackageRoot)torchsharp/0.101.5/buildTransitive/net6.0/TorchSharp.props" Condition="Exists('$(NuGetPackageRoot)torchsharp/0.101.5/buildTransitive/net6.0/TorchSharp.props')" />
-    <Import Project="$(NuGetPackageRoot)microsoft.ml/3.0.1/build/netstandard2.0/Microsoft.ML.props" Condition="Exists('$(NuGetPackageRoot)microsoft.ml/3.0.1/build/netstandard2.0/Microsoft.ML.props')" />
+    <Import Project="$(NuGetPackageRoot)torchsharp/0.102.7/buildTransitive/net6.0/TorchSharp.props" Condition="Exists('$(NuGetPackageRoot)torchsharp/0.102.7/buildTransitive/net6.0/TorchSharp.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.ml/4.0.2/build/netstandard2.0/Microsoft.ML.props" Condition="Exists('$(NuGetPackageRoot)microsoft.ml/4.0.2/build/netstandard2.0/Microsoft.ML.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.codeanalysis.analyzers/3.3.4/buildTransitive/Microsoft.CodeAnalysis.Analyzers.props" Condition="Exists('$(NuGetPackageRoot)microsoft.codeanalysis.analyzers/3.3.4/buildTransitive/Microsoft.CodeAnalysis.Analyzers.props')" />
   </ImportGroup>
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <PkgMicrosoft_ML_DnnImageFeaturizer_ResNet50 Condition=" '$(PkgMicrosoft_ML_DnnImageFeaturizer_ResNet50)' == '' ">/Users/snigdhatiwari/.nuget/packages/microsoft.ml.dnnimagefeaturizer.resnet50/0.21.1</PkgMicrosoft_ML_DnnImageFeaturizer_ResNet50>
-    <PkgMicrosoft_ML_DnnImageFeaturizer_ResNet18 Condition=" '$(PkgMicrosoft_ML_DnnImageFeaturizer_ResNet18)' == '' ">/Users/snigdhatiwari/.nuget/packages/microsoft.ml.dnnimagefeaturizer.resnet18/0.21.1</PkgMicrosoft_ML_DnnImageFeaturizer_ResNet18>
-    <PkgMicrosoft_ML_DnnImageFeaturizer_ResNet101 Condition=" '$(PkgMicrosoft_ML_DnnImageFeaturizer_ResNet101)' == '' ">/Users/snigdhatiwari/.nuget/packages/microsoft.ml.dnnimagefeaturizer.resnet101/0.21.1</PkgMicrosoft_ML_DnnImageFeaturizer_ResNet101>
-    <PkgMicrosoft_ML_DnnImageFeaturizer_AlexNet Condition=" '$(PkgMicrosoft_ML_DnnImageFeaturizer_AlexNet)' == '' ">/Users/snigdhatiwari/.nuget/packages/microsoft.ml.dnnimagefeaturizer.alexnet/0.21.1</PkgMicrosoft_ML_DnnImageFeaturizer_AlexNet>
-    <PkgMicrosoft_CodeAnalysis_Analyzers Condition=" '$(PkgMicrosoft_CodeAnalysis_Analyzers)' == '' ">/Users/snigdhatiwari/.nuget/packages/microsoft.codeanalysis.analyzers/3.0.0</PkgMicrosoft_CodeAnalysis_Analyzers>
+    <PkgMicrosoft_ML_DnnImageFeaturizer_ResNet50 Condition=" '$(PkgMicrosoft_ML_DnnImageFeaturizer_ResNet50)' == '' ">/Users/snigdhatiwari/.nuget/packages/microsoft.ml.dnnimagefeaturizer.resnet50/0.22.2</PkgMicrosoft_ML_DnnImageFeaturizer_ResNet50>
+    <PkgMicrosoft_ML_DnnImageFeaturizer_ResNet18 Condition=" '$(PkgMicrosoft_ML_DnnImageFeaturizer_ResNet18)' == '' ">/Users/snigdhatiwari/.nuget/packages/microsoft.ml.dnnimagefeaturizer.resnet18/0.22.2</PkgMicrosoft_ML_DnnImageFeaturizer_ResNet18>
+    <PkgMicrosoft_ML_DnnImageFeaturizer_ResNet101 Condition=" '$(PkgMicrosoft_ML_DnnImageFeaturizer_ResNet101)' == '' ">/Users/snigdhatiwari/.nuget/packages/microsoft.ml.dnnimagefeaturizer.resnet101/0.22.2</PkgMicrosoft_ML_DnnImageFeaturizer_ResNet101>
+    <PkgMicrosoft_ML_DnnImageFeaturizer_AlexNet Condition=" '$(PkgMicrosoft_ML_DnnImageFeaturizer_AlexNet)' == '' ">/Users/snigdhatiwari/.nuget/packages/microsoft.ml.dnnimagefeaturizer.alexnet/0.22.2</PkgMicrosoft_ML_DnnImageFeaturizer_AlexNet>
+    <PkgMicrosoft_CodeAnalysis_Analyzers Condition=" '$(PkgMicrosoft_CodeAnalysis_Analyzers)' == '' ">/Users/snigdhatiwari/.nuget/packages/microsoft.codeanalysis.analyzers/3.3.4</PkgMicrosoft_CodeAnalysis_Analyzers>
   </PropertyGroup>
 </Project>

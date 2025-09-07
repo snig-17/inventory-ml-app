@@ -1,0 +1,322 @@
+@page "/ml-dashboard"
+@rendermode InteractiveServer
+@inject DemandForecastingService MLService
+@inject InventoryService InventoryService
+@using InventoryMLApp.Services
+@using InventoryMLApp.Models
+@using InventoryMLApp.Models.ML
+@using InventoryMLApp.Services.ML
+
+<PageTitle>🤖 ML Dashboard - Demand Forecasting</PageTitle>
+
+<h1>🤖 AI-Powered Inventory Insights</h1>
+
+<!-- ML Model Status -->
+<div class="alert @modelStatusClass" role="alert">
+    <strong>🧠 ML Model Status:</strong> @modelStatus
+</div>
+
+<!-- Action Buttons -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="btn-group" role="group">
+            <button class="btn btn-primary" @onclick="LoadForecasts" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                🔮 Generate Forecasts
+            </button>
+            <button class="btn btn-warning" @onclick="TrainModel" disabled="@isLoading">
+                🏃‍♂️ Retrain Model
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (forecasts.Count > 0)
+{
+    <!-- Risk Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-danger">🚨 Critical Risk</h5>
+                    <h2 class="text-danger">@forecasts.Count(f => f.RiskLevel == ForecastRisk.Critical)</h2>
+                    <small>Items need immediate attention</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-warning">⚠️ High Risk</h5>
+                    <h2 class="text-warning">@forecasts.Count(f => f.RiskLevel == ForecastRisk.High)</h2>
+                    <small>Stockout within 7 days</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-info">ℹ️ Medium Risk</h5>
+                    <h2 class="text-info">@forecasts.Count(f => f.RiskLevel == ForecastRisk.Medium)</h2>
+                    <small>Stockout within 30 days</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success">✅ Low Risk</h5>
+                    <h2 class="text-success">@forecasts.Count(f => f.RiskLevel == ForecastRisk.Low)</h2>
+                    <small>Healthy stock levels</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Forecasts Table -->
+    <div class="card">
+        <div class="card-header">
+            <h4>📊 Demand Forecasts & Recommendations</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Current Stock</th>
+                            <th>30-Day Demand</th>
+                            <th>Days Until Stockout</th>
+                            <th>Risk Level</th>
+                            <th>Reorder Recommendation</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var forecast in forecasts)
+                        {
+                            <tr class="@GetRowClass(forecast.RiskLevel)">
+                                <td>
+                                    <strong>@forecast.ProductName</strong><br>
+                                    <small class="text-muted">@forecast.StoreId</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@forecast.CurrentStock</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">@forecast.PredictedDemand.ToString("F1")</span>
+                                </td>
+                                <td>
+                                    @if (forecast.DaysUntilStockout > 30)
+                                    {
+                                        <span class="text-success">30+ days</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="@GetDaysClass(forecast.DaysUntilStockout)">
+                                            @forecast.DaysUntilStockout days
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @GetRiskBadgeClass(forecast.RiskLevel)">
+                                        @GetRiskIcon(forecast.RiskLevel) @forecast.RiskLevel
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (forecast.RecommendedReorderQuantity > 0)
+                                    {
+                                        <span class="text-primary">
+                                            <strong>Order @forecast.RecommendedReorderQuantity units</strong>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-success">No action needed</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" @onclick="() => ShowDailyForecast(forecast)">
+                                        📈 Details
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Forecast Modal (simplified) -->
+    @if (selectedForecast != null)
+    {
+        <div class="alert alert-info mt-4">
+            <h5>📈 Daily Forecast: @selectedForecast.ProductName</h5>
+            <div class="row">
+                @foreach (var daily in selectedForecast.DailyForecasts.Take(7))
+                {
+                    <div class="col-md-1">
+                        <div class="text-center">
+                            <small>@daily.Date.ToString("M/d")</small><br>
+                            <strong>@daily.PredictedDemand.ToString("F0")</strong><br>
+                            <small class="@(daily.ProjectedStock <= 0 ? "text-danger" : "text-success")">
+                                Stock: @daily.ProjectedStock
+                            </small>
+                        </div>
+                    </div>
+                }
+            </div>
+            <button class="btn btn-sm btn-secondary mt-2" @onclick="() => selectedForecast = null">Close</button>
+        </div>
+    }
+}
+else if (!isLoading)
+{
+    <div class="alert alert-info">
+        <h5>🤖 Ready for AI Analysis</h5>
+        <p>Click "Generate Forecasts" to analyze your inventory and get AI-powered recommendations.</p>
+    </div>
+}
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">🤖 AI is analyzing your inventory patterns...</p>
+    </div>
+}
+
+@code {
+    private List<ForecastResult> forecasts = new();
+    private ForecastResult? selectedForecast;
+    private bool isLoading = false;
+    private string modelStatus = "Initializing...";
+    private string modelStatusClass = "alert-info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckModelStatus();
+    }
+
+    private async Task CheckModelStatus()
+    {
+        try
+        {
+            var loaded = await MLService.LoadModelAsync();
+            if (loaded)
+            {
+                modelStatus = "Model Ready ✅";
+                modelStatusClass = "alert-success";
+            }
+            else
+            {
+                modelStatus = "Model needs training ⚠️";
+                modelStatusClass = "alert-warning";
+            }
+        }
+        catch (Exception ex)
+        {
+            modelStatus = $"Model Error: {ex.Message} ❌";
+            modelStatusClass = "alert-danger";
+        }
+        StateHasChanged();
+    }
+
+    private async Task LoadForecasts()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            forecasts = await MLService.GetAllForecastsAsync();
+        }
+        catch (Exception ex)
+        {
+            modelStatus = $"Forecast Error: {ex.Message} ❌";
+            modelStatusClass = "alert-danger";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task TrainModel()
+    {
+        isLoading = true;
+        modelStatus = "Training model... 🔄";
+        modelStatusClass = "alert-info";
+        StateHasChanged();
+
+        try
+        {
+            var success = await MLService.TrainModelAsync();
+            if (success)
+            {
+                modelStatus = "Model trained successfully! ✅";
+                modelStatusClass = "alert-success";
+            }
+            else
+            {
+                modelStatus = "Training failed ❌";
+                modelStatusClass = "alert-danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            modelStatus = $"Training Error: {ex.Message} ❌";
+            modelStatusClass = "alert-danger";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowDailyForecast(ForecastResult forecast)
+    {
+        selectedForecast = forecast;
+    }
+
+    private string GetRowClass(ForecastRisk risk) => risk switch
+    {
+        ForecastRisk.Critical => "table-danger",
+        ForecastRisk.High => "table-warning",
+        _ => ""
+    };
+
+    private string GetRiskBadgeClass(ForecastRisk risk) => risk switch
+    {
+        ForecastRisk.Critical => "bg-danger",
+        ForecastRisk.High => "bg-warning",
+        ForecastRisk.Medium => "bg-info",
+        ForecastRisk.Low => "bg-success",
+        _ => "bg-secondary"
+    };
+
+    private string GetRiskIcon(ForecastRisk risk) => risk switch
+    {
+        ForecastRisk.Critical => "🚨",
+        ForecastRisk.High => "⚠️",
+        ForecastRisk.Medium => "ℹ️",
+        ForecastRisk.Low => "✅",
+        _ => "❓"
+    };
+
+    private string GetDaysClass(int days) => days switch
+    {
+        <= 1 => "text-danger fw-bold",
+        <= 7 => "text-warning fw-bold",
+        <= 30 => "text-info",
+        _ => "text-success"
+    };
+}
