@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("InventoryMLApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5f97ba9bb51f4976820bb69879ec29253699ca64")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e6f43a96d3196a7bbd355681b05d0259f2581b87")]
 [assembly: System.Reflection.AssemblyProductAttribute("InventoryMLApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("InventoryMLApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
